@@ -7,10 +7,10 @@ import androidx.lifecycle.ViewModel
 class GameViewModel : ViewModel() {
 
     // The current word
-    var word = ""
+    val word = MutableLiveData<String>()
 
     // The current score
-    var score = MutableLiveData<Int>()
+    val score = MutableLiveData<Int>()
 
     // The list of words - the front of the list is the next word to guess
     private lateinit var wordList: MutableList<String>
@@ -66,7 +66,7 @@ class GameViewModel : ViewModel() {
         if (wordList.isEmpty()) {
 //            gameFinished()
         } else {
-            word = wordList.removeAt(0)
+            word.value = wordList.removeAt(0)
         }
     }
 
