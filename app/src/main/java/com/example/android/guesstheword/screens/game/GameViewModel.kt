@@ -8,6 +8,18 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
 
+private val CORRECT_BUZZ_PATTERN = longArrayOf(100, 100, 100, 100, 100, 100)
+private val PANIC_BUZZ_PATTERN = longArrayOf(0, 200)
+private val GAME_OVER_BUZZ_PATTERN = longArrayOf(0, 2000)
+private val NO_BUZZ_PATTERN = longArrayOf(0)
+
+enum class BuzzType(val pattern: LongArray) {
+    CORRECT(CORRECT_BUZZ_PATTERN),
+    GAME_OVER(GAME_OVER_BUZZ_PATTERN),
+    COUNTDOWN_PANIC(PANIC_BUZZ_PATTERN),
+    NO_BUZZ(NO_BUZZ_PATTERN)
+}
+
 class GameViewModel : ViewModel() {
 
     companion object {
@@ -17,8 +29,15 @@ class GameViewModel : ViewModel() {
         // This is the number of milliseconds in a second
         const val ONE_SECOND = 1000L
         // This is the total time of the game
-        const val COUNTDOWN_TIME = 10000L
+        const val COUNTDOWN_TIME = 30000L
     }
+
+    private val _vibrate = MutableLiveData<BuzzType>()
+    val vibrate: LiveData<BuzzType>
+        get() {
+            return _vibrate
+        }
+
 
     private val timer: CountDownTimer
 
@@ -63,14 +82,20 @@ class GameViewModel : ViewModel() {
 
         _score.value = 0
         _eventGameFinished.value = false
+        _vibrate.value = BuzzType.NO_BUZZ
 
         timer = object : CountDownTimer(COUNTDOWN_TIME, ONE_SECOND) {
 
             override fun onTick(millisUntilFinished: Long) {
-                _currentTime.value = (millisUntilFinished/ ONE_SECOND)
+                val timeLeft = millisUntilFinished/ ONE_SECOND
+                _currentTime.value = timeLeft
+                if(timeLeft == 3L || timeLeft == 5L) {
+                    _vibrate.value = BuzzType.COUNTDOWN_PANIC
+                }
             }
 
             override fun onFinish() {
+                _vibrate.value = BuzzType.GAME_OVER
                 _currentTime.value = DONE
                 _eventGameFinished.value = true
             }
@@ -134,11 +159,16 @@ class GameViewModel : ViewModel() {
     }
 
     fun onCorrect() {
+        _vibrate.value = BuzzType.CORRECT
         _score.value = score.value?.plus(1)
         nextWord()
     }
 
     fun onGameFinishComplete() {
         _eventGameFinished.value = false
+    }
+
+    fun onBuzzComplete() {
+        _vibrate.value = BuzzType.NO_BUZZ
     }
 }
